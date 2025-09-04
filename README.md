@@ -9,6 +9,8 @@ This project consists of two main components:
 1. **GitHub Stargazers Analytics** (`github-stargazers.js`) - Fetches and analyzes stargazers from GitHub repositories
 2. **Cyberpunk Raffle System** (`raffle-winner.js`) - An interactive, animated raffle system for selecting winners
 
+   ![Raffle Winner - Dem](./stargazing-demo.gif)
+
 ## 📊 GitHub Stargazers Analytics
 
 ### Features
