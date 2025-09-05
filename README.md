@@ -1,6 +1,6 @@
 # GitHub Stargazers & Raffle System
 
-A comprehensive Node.js project that combines GitHub stargazer analytics with an interactive cyberpunk-themed raffle system for selecting winners from your stargazers.
+A comprehensive Node.js project (terminal CLI tool) that combines GitHub stargazer analytics with an interactive cyberpunk-themed raffle system for selecting winners from your stargazers.
 
 ## 🚀 Project Overview
 
