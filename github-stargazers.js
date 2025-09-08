@@ -481,6 +481,17 @@ async function main() {
     log(`   Sort Order: ${options.sort === 'desc' ? 'Descending (newest first)' : 'Ascending (oldest first)'}`, 'cyan');
     if (options.date) {
       log(`   Date Filter: ${options.date}`, 'cyan');
+      if (options.from) {
+        log(`   From Time: ${options.from}`, 'cyan');
+      }
+      if (options.to) {
+        log(`   To Time: ${options.to}`, 'cyan');
+      }
+      if (options.timezone) {
+        log(`   Timezone: ${options.timezone}`, 'cyan');
+      } else {
+        log(`   Timezone: Local (${Intl.DateTimeFormat().resolvedOptions().timeZone})`, 'cyan');
+      }
     }
     if (options.limit) {
       log(`   Result Limit: ${options.limit}`, 'cyan');
@@ -533,6 +544,9 @@ const args = process.argv.slice(2);
 const options = {
   sort: 'desc', // 'asc' or 'desc'
   date: null,   // specific date filter (YYYY-MM-DD)
+  from: null,   // from time filter (HH:MM or HH:MM:SS)
+  to: null,     // to time filter (HH:MM or HH:MM:SS)
+  timezone: null, // timezone for time filtering (e.g., 'UTC', 'America/New_York')
   limit: null,  // limit number of results
   help: false
 };
@@ -541,8 +555,19 @@ if (args.length === 0) {
   options.help = true;
 }
 
+// Valid options for validation
+const validOptions = ['--help', '-h', '--sort', '-s', '--date', '-d', '--from', '-f', '--to', '-t', '--timezone', '-z', '--limit', '-l'];
+
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
+  
+  // Check if it's an unknown option
+  if (arg.startsWith('-') && !validOptions.includes(arg)) {
+    log(`❌ Error: Unknown option '${arg}'`, 'red');
+    log('', 'reset');
+    options.help = true;
+    break;
+  }
   
   if (arg === '--help' || arg === '-h') {
     options.help = true;
@@ -551,20 +576,82 @@ for (let i = 0; i < args.length; i++) {
     if (sortValue === 'asc' || sortValue === 'desc') {
       options.sort = sortValue;
       i++; // Skip next argument
+    } else {
+      log(`❌ Error: Invalid sort value '${sortValue}'. Must be 'asc' or 'desc'`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
     }
   } else if (arg === '--date' || arg === '-d') {
     const dateValue = args[i + 1];
     if (dateValue && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
       options.date = dateValue;
       i++; // Skip next argument
+    } else {
+      log(`❌ Error: Invalid date format '${dateValue}'. Must be YYYY-MM-DD`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
+    }
+  } else if (arg === '--from' || arg === '-f') {
+    const fromValue = args[i + 1];
+    if (fromValue && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(fromValue)) {
+      options.from = fromValue;
+      i++; // Skip next argument
+    } else {
+      log(`❌ Error: Invalid from time '${fromValue}'. Must be HH:MM or HH:MM:SS format`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
+    }
+  } else if (arg === '--to' || arg === '-t') {
+    const toValue = args[i + 1];
+    if (toValue && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(toValue)) {
+      options.to = toValue;
+      i++; // Skip next argument
+    } else {
+      log(`❌ Error: Invalid to time '${toValue}'. Must be HH:MM or HH:MM:SS format`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
+    }
+  } else if (arg === '--timezone' || arg === '-z') {
+    const timezoneValue = args[i + 1];
+    if (timezoneValue) {
+      options.timezone = timezoneValue;
+      i++; // Skip next argument
+    } else {
+      log(`❌ Error: Timezone value is required for --timezone option`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
     }
   } else if (arg === '--limit' || arg === '-l') {
     const limitValue = parseInt(args[i + 1]);
     if (limitValue && limitValue > 0) {
       options.limit = limitValue;
       i++; // Skip next argument
+    } else {
+      log(`❌ Error: Invalid limit value '${args[i + 1]}'. Must be a positive number`, 'red');
+      log('', 'reset');
+      options.help = true;
+      break;
     }
   }
+}
+
+// Validate that from/to can only be used with date
+if ((options.from || options.to) && !options.date) {
+  log(`❌ Error: --from and --to options can only be used with --date option`, 'red');
+  log('', 'reset');
+  options.help = true;
+}
+
+// Validate that from and to must be used together
+if ((options.from && !options.to) || (!options.from && options.to)) {
+  log(`❌ Error: --from and --to must be used together as a time range`, 'red');
+  log('', 'reset');
+  options.help = true;
 }
 
 if (options.help) {
@@ -576,6 +663,13 @@ if (options.help) {
   log('                       Sort by starred date (default: desc)', 'cyan');
   log('  --date <YYYY-MM-DD>, -d <YYYY-MM-DD>', 'cyan');
   log('                       Filter by specific date', 'cyan');
+  log('  --from <HH:MM[:SS]>, -f <HH:MM[:SS]>', 'cyan');
+  log('                       Filter from time (requires --date and --to)', 'cyan');
+  log('  --to <HH:MM[:SS]>, -t <HH:MM[:SS]>', 'cyan');
+  log('                       Filter to time (requires --date and --from)', 'cyan');
+  log('  --timezone <tz>, -z <tz>', 'cyan');
+  log('                       Timezone for time filtering (if not specified, local timezone will be used)', 'cyan');
+  log('                       Valid timezones (TZ Identifier): https://en.wikipedia.org/wiki/List_of_tz_database_time_zones', 'yellow');
   log('  --limit <number>, -l <number>', 'cyan');
   log('                       Limit number of results', 'cyan');
   log('\nExamples:', 'yellow');
@@ -583,6 +677,10 @@ if (options.help) {
   log('  node github-stargazers.js --sort desc', 'cyan');
   log('  node github-stargazers.js --sort asc', 'cyan');
   log('  node github-stargazers.js --date 2025-02-26', 'cyan');
+  log('  node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00', 'cyan');
+  log('  node github-stargazers.js --date 2025-02-26 --from 09:30:00 --to 18:30:00', 'cyan');
+  log('  node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone UTC', 'cyan');
+  log('  node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone America/New_York', 'cyan');
   log('  node github-stargazers.js --limit 10', 'cyan');
   log('  node github-stargazers.js --sort desc --limit 20', 'cyan');
   log('\nAuthentication (Recommended):', 'yellow');
@@ -597,6 +695,60 @@ if (options.help) {
   log('  Fetches ALL stargazers information for the Solace Agent Mesh repository', 'cyan');
   log('  from the GitHub API with pagination support.', 'cyan');
   process.exit(0);
+}
+
+function parseTime(timeString) {
+  // Parse time string in HH:MM or HH:MM:SS format and return seconds since midnight
+  const parts = timeString.split(':');
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  const seconds = parts[2] ? parseInt(parts[2], 10) : 0;
+  
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function getTimeInTimezone(date, timezone) {
+  // Convert a date to the specified timezone and return time components
+  if (timezone) {
+    try {
+      // Use Intl.DateTimeFormat to get time in specified timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(date);
+      const hours = parseInt(parts.find(p => p.type === 'hour').value, 10);
+      const minutes = parseInt(parts.find(p => p.type === 'minute').value, 10);
+      const seconds = parseInt(parts.find(p => p.type === 'second').value, 10);
+      
+      return {
+        hours,
+        minutes,
+        seconds,
+        totalSeconds: hours * 3600 + minutes * 60 + seconds
+      };
+    } catch (error) {
+      log(`⚠️  Warning: Invalid timezone '${timezone}', falling back to local timezone`, 'yellow');
+      return {
+        hours: date.getHours(),
+        minutes: date.getMinutes(),
+        seconds: date.getSeconds(),
+        totalSeconds: date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()
+      };
+    }
+  } else {
+    // Use local timezone
+    return {
+      hours: date.getHours(),
+      minutes: date.getMinutes(),
+      seconds: date.getSeconds(),
+      totalSeconds: date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()
+    };
+  }
 }
 
 function filterAndSortStargazers(stargazers, options) {
@@ -615,6 +767,36 @@ function filterAndSortStargazers(stargazers, options) {
     });
     
     log(`📅 Filtered to ${filteredStargazers.length} stargazers on ${options.date}`, 'yellow');
+    
+    // Apply time filtering if from/to times are specified
+    if (options.from || options.to) {
+      const fromTime = options.from ? parseTime(options.from) : null;
+      const toTime = options.to ? parseTime(options.to) : null;
+      
+      filteredStargazers = filteredStargazers.filter(stargazer => {
+        const starredDate = new Date(stargazer.starred_at);
+        const timeInfo = getTimeInTimezone(starredDate, options.timezone);
+        const starredTime = timeInfo.totalSeconds;
+        
+        let matches = true;
+        
+        if (fromTime !== null && starredTime < fromTime) {
+          matches = false;
+        }
+        
+        if (toTime !== null && starredTime > toTime) {
+          matches = false;
+        }
+        
+        return matches;
+      });
+      
+      const timeFilter = [];
+      if (options.from) timeFilter.push(`from ${options.from}`);
+      if (options.to) timeFilter.push(`to ${options.to}`);
+      const timezoneInfo = options.timezone ? ` in ${options.timezone}` : ' (local timezone)';
+      log(`⏰ Further filtered to ${filteredStargazers.length} stargazers (${timeFilter.join(' ')} on ${options.date}${timezoneInfo})`, 'yellow');
+    }
   }
   
   // Sort by starred_at date
