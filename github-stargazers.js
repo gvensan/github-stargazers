@@ -6,9 +6,9 @@ const https = require('https');
 const fs = require('fs');
 
 // Configuration
-const REPO_OWNER = 'SolaceLabs';
-const REPO_NAME = 'solace-agent-mesh';
-const GITHUB_API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/stargazers`;
+const STARGAZERS_REO_OWNER = process.env.STARGAZERS_REPO_OWNER || 'SolaceLabs';
+const STARGAZERS_REO_NAME = process.env.STARGAZERS_REPO_NAME || 'solace-agent-mesh';
+const GITHUB_API_URL = `https://api.github.com/repos/${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}/stargazers`;
 
 // Colors for console output
 const colors = {
@@ -120,7 +120,7 @@ function makeRequest(url, options = {}) {
 
 async function getStargazers(limit = null) {
   try {
-    log(`🔍 Fetching ${limit ? `up to ${limit}` : 'ALL'} stargazers for ${REPO_OWNER}/${REPO_NAME}...`, 'cyan');
+    log(`🔍 Fetching ${limit ? `up to ${limit}` : 'ALL'} stargazers for ${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}...`, 'cyan');
     
     let allStargazers = [];
     let page = 1;
@@ -209,7 +209,7 @@ function displayStargazersInfo(stargazers) {
 function saveStargazersToFile(stargazers, filename = 'stargazers.json') {
   try {
     const data = {
-      repository: `${REPO_OWNER}/${REPO_NAME}`,
+      repository: `${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}`,
       total_stargazers: stargazers.length,
       fetched_at: new Date().toISOString(),
       stargazers: stargazers
@@ -225,7 +225,7 @@ function saveStargazersToFile(stargazers, filename = 'stargazers.json') {
 function generateStargazersReport(stargazers) {
   const report = {
     summary: {
-      repository: `${REPO_OWNER}/${REPO_NAME}`,
+      repository: `${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}`,
       total_stargazers: stargazers.length,
       report_generated_at: new Date().toISOString()
     },
@@ -453,7 +453,7 @@ function generateStargazersSummary(stargazers, options) {
   
   // Save summary to file
   const summaryData = {
-    repository: `${REPO_OWNER}/${REPO_NAME}`,
+    repository: `${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}`,
     total_stargazers: stargazers.length,
     filter_options: options,
     generated_at: new Date().toISOString(),
@@ -569,9 +569,7 @@ const options = {
   help: false
 };
 
-if (args.length === 0) {
-  options.help = true;
-}
+// No arguments means use default options (no help needed)
 
 // Valid options for validation
 const validOptions = ['--help', '-h', '--sort', '-s', '--date', '-d', '--from', '-f', '--to', '-t', '--timezone', '-z', '--limit', '-l'];
@@ -703,15 +701,22 @@ if (options.help) {
   log('  node github-stargazers.js --sort desc --limit 20', 'cyan');
   log('\nAuthentication (Recommended):', 'yellow');
   log('  Set GITHUB_TOKEN environment variable for higher rate limits:', 'cyan');
-  log('  export GITHUB_TOKEN=your_github_token', 'cyan');
+  log('  export GITHUB_TOKEN=your_github_token', 'brightMagenta');
   log('  node github-stargazers.js', 'cyan');
+  log('\nRepository Configuration:', 'yellow');
+  log('  Set repository owner and name via environment variables:', 'cyan');
+  log('  export STARGAZERS_REPO_OWNER=your_org_or_username', 'brightMagenta');
+  log('  export STARGAZERS_REPO_NAME=your_repository_name', 'brightMagenta');
+  log('  node github-stargazers.js', 'cyan');
+  log('  Default: SolaceLabs/solace-agent-mesh', 'cyan');
   log('\nRate Limiting:', 'yellow');
   log('  - Unauthenticated: 60 requests/hour', 'cyan');
   log('  - Authenticated: 5,000 requests/hour', 'cyan');
   log('  - Script will automatically wait if rate limit is exceeded', 'cyan');
   log('\nDescription:', 'yellow');
-  log('  Fetches ALL stargazers information for the Solace Agent Mesh repository', 'cyan');
+  log('  Fetches ALL stargazers information for the configured repository', 'cyan');
   log('  from the GitHub API with pagination support.', 'cyan');
+  log(`  Current repository: ${STARGAZERS_REO_OWNER}/${STARGAZERS_REO_NAME}`, 'cyan');
   process.exit(0);
 }
 

@@ -15,12 +15,14 @@ This project consists of two main components:
 
 ### Features
 - **API Integration**: Fetches stargazer data from GitHub repositories
+- **Configurable Repository**: Set target repository via environment variables
 - **Rate Limiting**: Handles GitHub API rate limits gracefully
 - **Authentication**: Supports both authenticated and unauthenticated requests
 - **Data Export**: Generates JSON reports and summaries
 - **Advanced Filtering**: Filter stargazers by date, time ranges, and timezone
 - **Timezone Support**: Filter stargazers by specific timezones (UTC, regional, etc.)
 - **Time Range Filtering**: Filter stargazers within specific time windows on a given date
+- **Interactive Validation**: User confirmation for invalid timezones before processing
 - **Optimized Pagination**: Efficient API usage with early termination
 - **Enhanced Error Handling**: Comprehensive validation and user-friendly error messages
 
@@ -54,6 +56,18 @@ node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone A
 
 # Filter with seconds precision
 node github-stargazers.js --date 2025-02-26 --from 09:30:00 --to 18:30:00 --timezone Europe/London
+```
+
+#### Repository Configuration
+```bash
+# Set target repository via environment variables (optional)
+export STARGAZERS_REPO_OWNER="your_org_or_username"
+export STARGAZERS_REPO_NAME="your_repository_name"
+
+# Default repository: SolaceLabs/solace-agent-mesh
+# Examples:
+export STARGAZERS_REPO_OWNER="nodejs"
+export STARGAZERS_REPO_NAME="node"
 ```
 
 #### Authentication Setup
@@ -127,6 +141,34 @@ node github-stargazers.js --unknown-option
 # ❌ Invalid: Invalid time format
 node github-stargazers.js --date 2025-02-26 --from 25:00 --to 17:00
 # Error: Invalid from time '25:00'. Must be HH:MM or HH:MM:SS format
+
+# ⚠️ Interactive: Invalid timezone with user confirmation
+node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone invalid
+# Warning: Unknown timezone 'invalid'
+#    This will fall back to local timezone (Asia/Calcutta)
+# Do you want to proceed with local timezone? (y/N):
+```
+
+### Interactive Timezone Validation
+The script now includes interactive validation for invalid timezones:
+
+#### How It Works
+1. **Early Detection**: Invalid timezones are detected before any processing begins
+2. **User Confirmation**: Script asks for confirmation before proceeding
+3. **Clear Information**: Shows the invalid timezone and fallback timezone
+4. **User Control**: User can choose to proceed or cancel the operation
+
+#### Example Flow
+```bash
+$ node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone invalid
+
+⚠️  Warning: Unknown timezone 'invalid'
+   This will fall back to local timezone (Asia/Calcutta)
+
+Do you want to proceed with local timezone? (y/N): y
+✅ Proceeding with local timezone...
+🚀 GitHub Stargazers Fetcher
+...
 ```
 
 ### Rate Limits
@@ -224,6 +266,10 @@ cd github-stargazers
 # Set GitHub token for stargazers analytics
 export GITHUB_TOKEN="your_github_token_here"
 
+# Set target repository (optional - defaults to SolaceLabs/solace-agent-mesh)
+export STARGAZERS_REPO_OWNER="your_org_or_username"
+export STARGAZERS_REPO_NAME="your_repository_name"
+
 # Create participants file for raffle
 echo "Participant 1" > participants.txt
 echo "Participant 2" >> participants.txt
@@ -253,6 +299,7 @@ github-stargazers/
 - **Rewards**: Run raffles to give back to your community
 - **Time-based Analysis**: Analyze stargazer patterns during specific events or announcements
 - **Global Reach**: Filter stargazers by timezone to understand international engagement
+- **Multi-Repository Analysis**: Analyze stargazers from different repositories using environment variables
 
 ### For Organizations
 - **Team Building**: Use raffles for internal team events
@@ -271,9 +318,10 @@ github-stargazers/
 ## 🔧 Customization
 
 ### Stargazers Analytics
-- Modify `REPO_OWNER` and `REPO_NAME` in `github-stargazers.js`
+- Set `STARGAZERS_REPO_OWNER` and `STARGAZERS_REPO_NAME` environment variables
 - Adjust rate limiting and pagination settings
 - Customize output formats and data processing
+- Modify timezone validation and confirmation behavior
 
 ### Raffle System
 - Modify ASCII art characters in `createSmallAsciiArt()`
