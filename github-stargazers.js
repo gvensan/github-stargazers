@@ -19,7 +19,13 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
+  brightRed: '\x1b[91m',
+  brightGreen: '\x1b[92m',
+  brightYellow: '\x1b[93m',
+  brightBlue: '\x1b[94m',
+  brightMagenta: '\x1b[95m',
+  brightCyan: '\x1b[96m'
 };
 
 function log(message, color = 'reset') {
@@ -473,6 +479,14 @@ function generateStargazersSummary(stargazers, options) {
 
 async function main() {
   try {
+    // Check for invalid timezone and ask for confirmation before proceeding
+    if (options.timezone && !validateTimezone(options.timezone)) {
+      const proceed = await confirmInvalidTimezone(options.timezone);
+      if (!proceed) {
+        process.exit(1);
+      }
+    }
+    
     log('🚀 GitHub Stargazers Fetcher', 'bright');
     log('=' .repeat(50), 'blue');
     
@@ -488,7 +502,11 @@ async function main() {
         log(`   To Time: ${options.to}`, 'cyan');
       }
       if (options.timezone) {
-        log(`   Timezone: ${options.timezone}`, 'cyan');
+        if (validateTimezone(options.timezone)) {
+          log(`   Timezone: ${options.timezone}`, 'cyan');
+        } else {
+          log(`   Timezone: Local (${Intl.DateTimeFormat().resolvedOptions().timeZone}) - invalid '${options.timezone}' ignored`, 'yellow');
+        }
       } else {
         log(`   Timezone: Local (${Intl.DateTimeFormat().resolvedOptions().timeZone})`, 'cyan');
       }
@@ -669,7 +687,7 @@ if (options.help) {
   log('                       Filter to time (requires --date and --from)', 'cyan');
   log('  --timezone <tz>, -z <tz>', 'cyan');
   log('                       Timezone for time filtering (if not specified, local timezone will be used)', 'cyan');
-  log('                       Valid timezones (TZ Identifier): https://en.wikipedia.org/wiki/List_of_tz_database_time_zones', 'yellow');
+  log('                       Valid timezones (TZ Identifier): https://en.wikipedia.org/wiki/List_of_tz_database_time_zones', 'brightYellow');
   log('  --limit <number>, -l <number>', 'cyan');
   log('                       Limit number of results', 'cyan');
   log('\nExamples:', 'yellow');
@@ -727,6 +745,31 @@ function validateTimezone(timezone) {
   } catch (error) {
     return false;
   }
+}
+
+async function confirmInvalidTimezone(timezone) {
+  return new Promise((resolve) => {
+    log(`⚠️  Warning: Unknown timezone '${timezone}'`, 'brightYellow');
+    log(`   This will fall back to local timezone (${Intl.DateTimeFormat().resolvedOptions().timeZone})`, 'yellow');
+    log('', 'reset');
+    
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    
+    rl.question('Do you want to proceed with local timezone? (y/N): ', (answer) => {
+      rl.close();
+      if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+        log('✅ Proceeding with local timezone...', 'green');
+        resolve(true);
+      } else {
+        log('❌ Operation cancelled by user', 'red');
+        resolve(false);
+      }
+    });
+  });
 }
 
 function getTimeInTimezone(date, timezone) {
