@@ -707,9 +707,41 @@ function parseTime(timeString) {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
+function validateTimezone(timezone) {
+  // Validate if a timezone is supported by the system
+  try {
+    // Try to create a date formatter with the timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    });
+    
+    // Try to format a test date to see if timezone is valid
+    const testDate = new Date();
+    formatter.formatToParts(testDate);
+    
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 function getTimeInTimezone(date, timezone) {
   // Convert a date to the specified timezone and return time components
   if (timezone) {
+    if (!validateTimezone(timezone)) {
+      log(`⚠️  Warning: Unknown timezone '${timezone}' - local timezone will be used`, 'yellow');
+      return {
+        hours: date.getHours(),
+        minutes: date.getMinutes(),
+        seconds: date.getSeconds(),
+        totalSeconds: date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()
+      };
+    }
+    
     try {
       // Use Intl.DateTimeFormat to get time in specified timezone
       const formatter = new Intl.DateTimeFormat('en-US', {
@@ -732,7 +764,7 @@ function getTimeInTimezone(date, timezone) {
         totalSeconds: hours * 3600 + minutes * 60 + seconds
       };
     } catch (error) {
-      log(`⚠️  Warning: Invalid timezone '${timezone}', falling back to local timezone`, 'yellow');
+      log(`⚠️  Warning: Error processing timezone '${timezone}' - local timezone will be used`, 'yellow');
       return {
         hours: date.getHours(),
         minutes: date.getMinutes(),
