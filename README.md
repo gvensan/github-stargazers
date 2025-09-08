@@ -18,8 +18,11 @@ This project consists of two main components:
 - **Rate Limiting**: Handles GitHub API rate limits gracefully
 - **Authentication**: Supports both authenticated and unauthenticated requests
 - **Data Export**: Generates JSON reports and summaries
-- **Filtering**: Filter stargazers by date, sort order, and limits
+- **Advanced Filtering**: Filter stargazers by date, time ranges, and timezone
+- **Timezone Support**: Filter stargazers by specific timezones (UTC, regional, etc.)
+- **Time Range Filtering**: Filter stargazers within specific time windows on a given date
 - **Optimized Pagination**: Efficient API usage with early termination
+- **Enhanced Error Handling**: Comprehensive validation and user-friendly error messages
 
 ### Usage
 
@@ -38,6 +41,21 @@ node github-stargazers.js --date 2025-08-20
 node github-stargazers.js --limit 5
 ```
 
+#### Advanced Time Filtering
+```bash
+# Filter stargazers by time range on a specific date
+node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00
+
+# Filter with timezone support (UTC)
+node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone UTC
+
+# Filter with regional timezone (Eastern Time)
+node github-stargazers.js --date 2025-02-26 --from 09:00 --to 17:00 --timezone America/New_York
+
+# Filter with seconds precision
+node github-stargazers.js --date 2025-02-26 --from 09:30:00 --to 18:30:00 --timezone Europe/London
+```
+
 #### Authentication Setup
 ```bash
 # Set your GitHub token (required for private repos or higher rate limits)
@@ -53,13 +71,63 @@ export GITHUB_TOKEN="your_github_token_here"
 - `--sort <asc|desc>`: Sort order (default: desc)
 - `--limit <number>`: Maximum number of stargazers to fetch
 - `--date <YYYY-MM-DD>`: Filter stargazers by specific date
+- `--from <HH:MM[:SS]>`: Filter from time (requires --date and --to)
+- `--to <HH:MM[:SS]>`: Filter to time (requires --date and --from)
+- `--timezone <tz>`: Timezone for time filtering (if not specified, local timezone will be used)
 - `--help`: Show help information
+
+#### Time Filtering Rules
+- **Time Range Required**: `--from` and `--to` must be used together
+- **Date Required**: Time filtering requires `--date` parameter
+- **Timezone Support**: Use standard IANA timezone identifiers
+- **Time Formats**: Supports both `HH:MM` and `HH:MM:SS` formats
+- **Local Default**: If no timezone specified, uses your machine's local timezone
+
+#### Valid Timezone Examples
+- `UTC` - Coordinated Universal Time
+- `America/New_York` - Eastern Time (US)
+- `America/Los_Angeles` - Pacific Time (US)
+- `Europe/London` - British Time
+- `Europe/Paris` - Central European Time
+- `Asia/Tokyo` - Japan Standard Time
+- `Asia/Shanghai` - China Standard Time
+
+> **💡 Tip**: For a complete list of valid timezone identifiers, visit: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 ### Output Files
 - `stargazers-detailed.json`: Complete stargazer data with user profiles
 - `stargazers-report.json`: Processed statistics and analytics
 - `stargazers-summary-{timestamp}.json`: Summary with usernames and dates
 - `participants.txt`: Generated from stargazer data for raffle system
+
+### Enhanced Error Handling
+The script now includes comprehensive validation and user-friendly error messages:
+
+#### Validation Features
+- **Unknown Options**: Detects and reports unknown command-line options
+- **Invalid Parameters**: Validates parameter values and formats
+- **Required Combinations**: Ensures `--from` and `--to` are used together
+- **Parameter Dependencies**: Validates that time filtering requires date parameter
+- **Timezone Validation**: Checks for valid timezone identifiers
+
+#### Error Examples
+```bash
+# ❌ Invalid: Using --from without --to
+node github-stargazers.js --date 2025-02-26 --from 09:00
+# Error: --from and --to must be used together as a time range
+
+# ❌ Invalid: Using time parameters without date
+node github-stargazers.js --from 09:00 --to 17:00
+# Error: --from and --to options can only be used with --date option
+
+# ❌ Invalid: Unknown option
+node github-stargazers.js --unknown-option
+# Error: Unknown option '--unknown-option'
+
+# ❌ Invalid: Invalid time format
+node github-stargazers.js --date 2025-02-26 --from 25:00 --to 17:00
+# Error: Invalid from time '25:00'. Must be HH:MM or HH:MM:SS format
+```
 
 ### Rate Limits
 - **Unauthenticated**: 60 requests/hour
@@ -183,16 +251,22 @@ github-stargazers/
 - **Community Engagement**: Track and reward your stargazers
 - **Analytics**: Understand your project's growth and engagement
 - **Rewards**: Run raffles to give back to your community
+- **Time-based Analysis**: Analyze stargazer patterns during specific events or announcements
+- **Global Reach**: Filter stargazers by timezone to understand international engagement
 
 ### For Organizations
 - **Team Building**: Use raffles for internal team events
 - **Community Management**: Engage with your GitHub community
 - **Data Analysis**: Analyze stargazer patterns and trends
+- **Business Hours Analysis**: Filter stargazers during business hours in specific timezones
+- **Event Impact**: Measure the impact of announcements or releases by time
 
 ### For Events & Contests
 - **Conference Giveaways**: Select winners from event participants
 - **Hackathon Prizes**: Fair selection of contest winners
 - **Community Rewards**: Reward active community members
+- **Time-limited Contests**: Filter participants who engaged during specific contest periods
+- **Global Events**: Analyze participation across different timezones for international events
 
 ## 🔧 Customization
 
